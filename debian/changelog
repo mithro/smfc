@@ -277,7 +277,7 @@ smfc (5.1.1) unstable; urgency=medium
     fixed.
   * Release process updated in DEVELOPMENT.md.
 
--- Peter Sulyok <peter@sulyok.net>  Sat, 28 Mar 2026 00:00:00 +0000
+ -- Peter Sulyok <peter@sulyok.net>  Sat, 28 Mar 2026 00:00:00 +0000
 
 smfc (5.1.0) unstable; urgency=medium
 
