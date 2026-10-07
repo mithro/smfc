@@ -1,7 +1,8 @@
 Source: smfc
 Section: utils
 Priority: optional
-Maintainer: Peter Sulyok <peter@sulyok.net>
+Maintainer: Tim 'mithro' Ansell <me@mith.ro>
+XSBC-Original-Maintainer: Peter Sulyok <peter@sulyok.net>
 Build-Depends: debhelper-compat (= 13),
                dh-python,
                pybuild-plugin-pyproject,
@@ -9,6 +10,8 @@ Build-Depends: debhelper-compat (= 13),
                python3-setuptools
 Standards-Version: 4.6.2
 Homepage: https://github.com/petersulyok/smfc
+Vcs-Browser: https://github.com/mithro/smfc
+Vcs-Git: https://github.com/mithro/smfc.git -b packaging
 Rules-Requires-Root: no
 
 Package: smfc
