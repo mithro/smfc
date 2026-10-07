@@ -1,0 +1,7 @@
+# What kind of packaging repository this is, and why it differs from the
+# defaults: mithro/apt-repo-action's docs/packaging.md ("The declaration").
+kind = "A"
+upstream = "https://github.com/petersulyok/smfc"
+# Pure Python (dh-python): the one package is Architecture: all, built once
+# per suite.
+architectures = "all"

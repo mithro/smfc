@@ -1,0 +1,76 @@
+name: Debian packages
+
+# Every push to packaging tests smfc, builds it for each suite the declaration
+# (.github/apt-packaging.toml) names, install-tests it, and republishes a
+# signed apt repository per suite on GitHub Pages (https://mith.ro/smfc/<suite>/).
+# The package is Architecture: all (dh-python), so one x86 build per suite
+# serves every architecture. A pull request builds the same packages and
+# publishes nothing.
+#
+# This follows mithro/apt-repo-action's docs/packaging.md (Set A: packaging
+# is upstream plus our changes; see packaging/README.md).
+on:
+  push:
+    branches: [packaging]
+  pull_request:
+  workflow_dispatch:
+
+# Least privilege by default: only the publish job below raises this, and only
+# for itself. The build jobs run Docker, so they should never hold a token
+# that can write to Pages.
+permissions:
+  contents: read
+
+concurrency:
+  group: deb-${{ github.ref }}
+  # A newer push to a pull request cancels the older build. On the default
+  # branch a running publish is never cancelled: the newest push waits for it,
+  # and replaces any older push still waiting (it contains that one's commits).
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test:
+    # Upstream's own tests and linters (.github/workflows/test.yml, which only
+    # runs on upstream's main), on each Python upstream supports. The package
+    # build runs the tests again, against each suite's packages.
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: uv sync --all-extras --dev
+      - run: uv run pytest
+      - run: uv run pylint src test
+      - run: uv run ruff check
+
+  build-deb:
+    needs: test
+    uses: mithro/apt-repo-action/.github/workflows/build-deb.yml@main
+    with:
+      # The Set A version: <upstream release>[+git<N>.g<sha>]-0+welland<M>
+      # (docs/packaging.md, "Versions"), from the shared deb-version.py.
+      version-args: --owner-tag welland --upstream-branch upstream
+
+  publish-apt:
+    # Scoped to this job alone. A job calling a reusable workflow sets the
+    # maximum permissions available to it, so the elevated Pages scopes stay
+    # here rather than applying to the whole workflow.
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    # Build and install-test pull requests, but never publish from one (or
+    # from any branch but packaging).
+    if: github.event_name != 'pull_request' && github.ref_name == github.event.repository.default_branch
+    needs: build-deb
+    uses: mithro/apt-repo-action/.github/workflows/publish-apt.yml@main
+    with:
+      suites: ${{ needs.build-deb.outputs.suites }}
+      description: "smfc (Supermicro Fan Control) from upstream git, packaged for Debian"
+    secrets:
+      gpg-private-key: ${{ secrets.APT_GPG_PRIVATE_KEY }}
